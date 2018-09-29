@@ -6,6 +6,14 @@ RSpec.describe "Movies", type: :request do
   let(:first_movie) { movies.first }
   let(:last_movie)  { movies.last }
 
+  let(:pass)  { Faker::Internet.password }
+  let(:user)  { create(:user, password: pass) }
+  let(:token) { AuthenticateUserCommand.call(user.email, pass)&.result }
+
+  let(:authorization_header) do
+    { 'Authorization' => "Bearer #{token}" }
+  end
+
   describe "GET /movies" do
     before { get movies_path }
 
@@ -57,9 +65,19 @@ RSpec.describe "Movies", type: :request do
       { movie: { title: Faker::Movie.quote, release_date: rand(10).years.ago } }
     end
 
-    before { post movies_path, params: movie_params }
+    context "success" do
+      before do
+        post movies_path(last_movie), params: movie_params, headers: authorization_header
+      end
 
-    it { expect(response).to have_http_status(:ok) }
+      it { expect(response).to have_http_status(:created) }
+    end
+
+    context "failure" do
+      before { post movies_path, params: movie_params }
+
+      it { expect(response).to have_http_status(:unauthorized) }
+    end
   end
 
   describe "PATCH/PUT /movies/:id" do
@@ -67,14 +85,30 @@ RSpec.describe "Movies", type: :request do
       { movie: { title: "A new title :)" } }
     end
 
-    before { put movie_path(last_movie), params: movie_params }
+    context "sucess" do
+      before { put movie_path(last_movie), params: movie_params, headers: authorization_header }
 
-    it { expect(response).to have_http_status(:ok) }
+      it { expect(response).to have_http_status(:no_content) }
+    end
+
+    context "failure" do
+      before { put movie_path(last_movie), params: movie_params }
+
+      it { expect(response).to have_http_status(:unauthorized) }
+    end
   end
 
   describe "DELETE /movies/:id" do
-    before { delete movie_path(last_movie) }
+    context "success" do
+      before { delete movie_path(last_movie), headers: authorization_header }
 
-    it { expect(response).to have_http_status(:ok) }
+      it { expect(response).to have_http_status(:no_content) }
+    end
+
+    context "failure" do
+      before { delete movie_path(last_movie) }
+
+      it { expect(response).to have_http_status(:unauthorized) }
+    end
   end
 end

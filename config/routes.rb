@@ -1,3 +1,7 @@
 Rails.application.routes.draw do
-  # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
+  defaults format: :json do
+    resource :auth, only: %i(create), controller: :authentication
+    resources :movies
+    resources :people
+  end
 end

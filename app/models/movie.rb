@@ -6,19 +6,18 @@ class Movie < ApplicationRecord
     has_many :directors, -> { where("roles.name = ?", "director") }
     has_many :producers, -> { where("roles.name = ?", "producer") }
     has_many :actors, -> { where("roles.name = ?", "actor") }
-    has_many :actress, -> { where("roles.name = ?", "actress") }
+    has_many :actresses, -> { where("roles.name = ?", "actress") }
   end
 
-  scope :as_actor, -> { where("roles.name = ?", 'actor') }
-  scope :as_actress, -> { where("roles.name = ?", 'actress') }
-  scope :as_director, -> { where("roles.name = ?", 'director') }
-  scope :as_producer, -> { where("roles.name = ?", 'producer') }
+  scope :as_role, ->(role_name) { joins(:people).distinct.where(roles: { name: role_name })}
+
+  validates :title, :release_date, presence: true
 
   # Public: Gets casting for a given movie.
   #
   # Returns Array.
   def casting
-    [actors + actress].flatten
+    [actors + actresses].flatten
   end
 
   # Public: Gets release year.
